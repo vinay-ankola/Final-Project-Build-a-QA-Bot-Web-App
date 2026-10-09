@@ -68,7 +68,7 @@ def watsonx_embedding():
 ## Vector db
 def vector_database(chunks):
     embedding_model = watsonx_embedding()
-    ids = [str(i) for i in range(0, len(chunks))]    
+    ids = [str(i) for i in range(0, len(chunks))]
     vectordb = Chroma.from_documents(chunks , embedding_model, ids=ids)
     return vectordb
 
@@ -77,18 +77,30 @@ def retriever(file):
     splits = document_loader(file)
     chunks = text_splitter(splits)
     vectordb = vector_database(chunks)
+    #for i in range(3):
+        #print("VECTORDB: ", vectordb._collection.get(ids=str(i)))
+    #print("chunks: ", chunks)
+    #print("VECTORDB count: ", vectordb._collection.get(ids=str(0)))
     retriever = vectordb.as_retriever()
     return retriever
 
 ## QA Chain
 def retriever_qa(file, query):
+    #llm = get_llm()
     getllm = get_llm()
+    #test_response = test_llm.invoke("Hello! Respond with the word 'Success' if you can read this.")
     retriever_obj = retriever(file)
+    test_query = "What school names are listed in the education section?"
+    #retrieved_docs = retriever_obj.invoke(test_query)
+    #print("retrieved_docs: ", retrieved_docs)
     qa = RetrievalQA.from_chain_type(llm=getllm, 
                                     chain_type="stuff", 
                                     retriever=retriever_obj, 
                                     return_source_documents=False)
-    response = qa.invoke(query)
+    response = qa.invoke(test_query)
+    print("RESPONSE KEY QUERY: ", response['query'])
+    print("RESPONSE KEY RESULT: ", response['result'])
+    print("RESPONSE: ", response)
     return response['result']
 
 
@@ -97,7 +109,7 @@ rag_application = gr.Interface(
     fn=retriever_qa,
     allow_flagging="never",
     inputs=[
-        gr.File(label="Upload PDF File", file_count="single", file_types=['.pdf'], type="filepath"),  # Drag and drop file upload
+        gr.File(label="Upload PDF File", file_count="single", file_types=['.pdf'], type="filepath"),
         gr.Textbox(label="Input Query", lines=2, placeholder="Type your question here...")
     ],
     outputs=gr.Textbox(label="Output"),
